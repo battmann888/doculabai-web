@@ -17,10 +17,14 @@ class Settings(BaseSettings):
         "gemini-3.5-flash,gemini-3.5-flash-lite,gemini-3.6-flash,gemini-3.7-flash,gemini-flash-lite-latest"
     )
 
-    storage_dir: Path = Path("./data")
+    storage_dir: Path = Path(
+        "/tmp/data" if __import__("os").environ.get("VERCEL") else "./data"
+    )
     max_upload_size_mb: int = 25
     ai_timeout_seconds: int = 90
-    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
+    cors_origins: str = (
+        "http://localhost:5173,http://127.0.0.1:5173,https://doculabai.my.id"
+    )
 
     @property
     def max_upload_size_bytes(self) -> int:
