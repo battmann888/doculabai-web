@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useRef } from 'react';
+import { forwardRef } from 'react';
 import { Loader2 } from 'lucide-react';
 
 interface DocumentViewerProps {
@@ -9,22 +9,11 @@ interface DocumentViewerProps {
   onImageSelect?: (image: HTMLImageElement) => void;
   onImageDeselect?: () => void;
   imageSelected?: boolean;
+  selectedImageSize?: string;
 }
 
 export const DocumentViewer = forwardRef<HTMLDivElement, DocumentViewerProps>(
-  ({ isRendering, statusMessage, onTextSelect, onImageUpload, onImageSelect, onImageDeselect, imageSelected }, ref) => {
-    const innerRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-      if (typeof ref === 'function') {
-        ref(innerRef.current);
-        return;
-      }
-
-      if (ref) {
-        (ref as React.MutableRefObject<HTMLDivElement | null>).current = innerRef.current;
-      }
-    }, [ref]);
+  ({ isRendering, statusMessage, onTextSelect, onImageUpload, onImageSelect, onImageDeselect, imageSelected, selectedImageSize }, ref) => {
 
     return (
       <div className="document-shell flex h-full flex-col">
@@ -38,7 +27,13 @@ export const DocumentViewer = forwardRef<HTMLDivElement, DocumentViewerProps>(
             <span className="pixel-label ml-2 text-[10px] font-medium tracking-[.12em] text-white/52">DOCUMENT CANVAS</span>
           </div>
           <div className="flex items-center gap-3">
-            <label className="pixel-label cursor-pointer text-[10px] font-medium tracking-[.1em] text-primary-100/65">
+            {imageSelected && selectedImageSize && (
+              <span className="image-size-badge pixel-label flex items-center gap-1.5 rounded-full border border-primary-500/40 bg-primary-500/15 px-3 py-1 text-[10px] font-semibold tracking-[.08em] text-primary-200 shadow-[0_0_14px_rgba(59,102,255,.25)]">
+                <span className="h-1.5 w-1.5 rounded-full bg-primary-400 shadow-[0_0_8px_rgba(59,102,255,.9)]" />
+                {selectedImageSize}
+              </span>
+            )}
+            <label className="pixel-label cursor-pointer text-[10px] font-medium tracking-[.1em] text-primary-100/65 hover:text-primary-300 transition-colors">
               {imageSelected ? 'REPLACE IMAGE' : 'ADD IMAGE'}
               <input
                 type="file"
@@ -55,6 +50,7 @@ export const DocumentViewer = forwardRef<HTMLDivElement, DocumentViewerProps>(
               LAYOUT LOCKED / AI EDITABLE
             </span>
           </div>
+
         </div>
 
         <div className="relative flex-1 overflow-auto">
@@ -68,13 +64,13 @@ export const DocumentViewer = forwardRef<HTMLDivElement, DocumentViewerProps>(
           <div className="flex justify-center px-4 py-8 sm:px-8 sm:py-12">
             <div className="image-canvas-stage">
             <div
-              ref={innerRef}
+              ref={ref}
               onClick={(event) => {
                 const target = event.target as HTMLElement;
                 const image = target.closest('img');
                 if (image) {
                   event.stopPropagation();
-                  onImageSelect?.(image);
+                  onImageSelect?.(image as HTMLImageElement);
                   return;
                 }
                 onImageDeselect?.();

@@ -16,7 +16,9 @@ export function UpgradeModal({ onClose }: UpgradeModalProps) {
         <div className="upgrade-price"><strong>$4.99</strong><span>/ bulan</span></div>
         <ul className="upgrade-list"><li><Check /> AI edits tanpa batas</li><li><Check /> Layout dan formatting tetap aman</li><li><Check /> Export DOCX tanpa watermark</li></ul>
         <button type="button" className="modal-primary-button upgrade-button" onClick={onClose}>Upgrade to Pro</button>
+
         <button type="button" className="upgrade-later" onClick={onClose}>Nanti saja</button>
+
       </section>
     </div>
   );

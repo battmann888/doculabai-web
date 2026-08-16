@@ -1,7 +1,4 @@
-/**
- * Detect the dominant font-family used in a rendered document.
- * Falls back to empty string so edits keep the original inline font.
- */
+
 export function detectDocumentFont(container: HTMLElement | null): string {
   if (!container) return '';
 
@@ -16,9 +13,7 @@ export function detectDocumentFont(container: HTMLElement | null): string {
 
     const family = window.getComputedStyle(el).fontFamily;
     const primary = normalizeFontFamily(family);
-    if (!primary) continue;
-
-    // Weight longer text runs higher — better signal of body font
+    if (!primary) continue;
     counts.set(primary, (counts.get(primary) || 0) + text.length);
   }
 
@@ -40,7 +35,7 @@ export function normalizeFontFamily(family: string): string {
   return first.replace(/^['"]|['"]$/g, '');
 }
 
-/** Built-in edit font choices; document font is prepended dynamically. */
+
 export const STANDARD_FONTS = [
   { value: 'Arial', label: 'Arial' },
   { value: 'Calibri', label: 'Calibri' },

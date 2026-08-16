@@ -12,7 +12,6 @@ interface StoredDocument {
   savedAt: number;
   blob: Blob;
 }
-
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -33,10 +32,12 @@ export async function saveDocumentToHistory(
   file: File,
   blob: Blob,
 ): Promise<DocumentHistoryItem> {
+  const savedAt = Date.now();
   const item: DocumentHistoryItem = {
-    id: `${userId}-${Date.now()}-${file.name}`,
+    id: `${userId}-${savedAt}-${file.name}`,
     name: file.name,
     meta: new Date().toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }),
+    savedAt,
   };
 
   const db = await openDb();
@@ -49,7 +50,7 @@ export async function saveDocumentToHistory(
       userId,
       name: file.name,
       meta: item.meta,
-      savedAt: Date.now(),
+      savedAt,
       blob,
     } satisfies StoredDocument);
   });
@@ -87,7 +88,7 @@ export async function listHistoryForUser(userId: string): Promise<DocumentHistor
   return records
     .sort((a, b) => b.savedAt - a.savedAt)
     .slice(0, 20)
-    .map((record) => ({ id: record.id, name: record.name, meta: record.meta }));
+    .map((record) => ({ id: record.id, name: record.name, meta: record.meta, savedAt: record.savedAt }));
 }
 
 export async function updateDocumentInHistory(
@@ -126,7 +127,7 @@ export async function updateDocumentInHistory(
   });
   db.close();
 
-  return { id: updated.id, name: updated.name, meta: updated.meta };
+  return { id: updated.id, name: updated.name, meta: updated.meta, savedAt: updated.savedAt };
 }
 
 export async function clearHistoryForUser(userId: string): Promise<void> {
@@ -146,4 +147,29 @@ export async function clearHistoryForUser(userId: string): Promise<void> {
     records.forEach((record) => store.delete(record.id));
   });
   db.close();
+}
+
+export async function deleteDocumentFromHistory(userId: string, itemId: string): Promise<StoredDocument | null> {
+  const db = await openDb();
+  const record = await new Promise<StoredDocument | undefined>((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readonly');
+    const request = tx.objectStore(STORE).get(itemId);
+    request.onsuccess = () => resolve(request.result as StoredDocument | undefined);
+    request.onerror = () => reject(request.error);
+  });
+
+  if (!record || record.userId !== userId) {
+    db.close();
+    return null;
+  }
+
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    tx.objectStore(STORE).delete(itemId);
+  });
+  db.close();
+
+  return record;
 }

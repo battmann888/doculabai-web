@@ -27,3 +27,12 @@ __pycache__/
 # Python virtual environments
 venv/
 .venv/
+
+# Runtime data & test artifacts
+backend/data/
+backend/.pytest_cache/
+backend/.pytest_tmp/
+backend/test_edit.json
+backend/test_nim.py
+backend/test_nim_integration.py
+

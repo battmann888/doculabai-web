@@ -1,82 +1,86 @@
-import type { AIEditRequest, AIEditResponse } from '@/types';
-import { getAccessToken } from '@/utils/supabase';
+import type { AIEditRequest, AIEditResponse, DocSegment } from '@/types';
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000';
-const MAX_RETRIES = 3;
-const RETRY_DELAY = 1000;
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, '') || 'http://localhost:8000';
+const REQUEST_TIMEOUT_MS = 100_000;
 
-async function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-async function authHeaders(): Promise<HeadersInit> {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  const token = await getAccessToken();
-  if (token) headers.Authorization = `Bearer ${token}`;
-  return headers;
-}
-
-export async function sendEditCommand(
-  payload: AIEditRequest,
-  signal?: AbortSignal,
-): Promise<AIEditResponse> {
-  let lastError: Error | null = null;
-
-  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    try {
-      const timeoutController = new AbortController();
-      const timeoutId = window.setTimeout(() => timeoutController.abort(), 65_000);
-      const requestSignal = signal
-        ? AbortSignal.any([signal, timeoutController.signal])
-        : timeoutController.signal;
-
-      const res = await fetch(`${API_BASE}/api/edit`, {
-        method: 'POST',
-        headers: await authHeaders(),
-        body: JSON.stringify(payload),
-        signal: requestSignal,
-      });
-
-      window.clearTimeout(timeoutId);
-
-      if (res.status === 401) {
-        throw new Error('Sesi berakhir. Silakan login kembali.');
-      }
-      if (res.status === 429) {
-        throw new Error('Terlalu banyak permintaan. Tunggu sebentar lalu coba lagi.');
-      }
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(errorText || 'Failed to process edit request');
-      }
-
-      return res.json();
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
-      
-      // Don't retry on client-side errors (4xx) or abort errors
-      if (lastError.message.includes('Sesi berakhir') || 
-          lastError.message.includes('429') ||
-          (error instanceof DOMException && error.name === 'AbortError')) {
-        throw lastError;
-      }
-
-      // Retry on server errors (5xx) or network issues
-      if (attempt < MAX_RETRIES) {
-        console.warn(`Request failed (attempt ${attempt}/${MAX_RETRIES}), retrying...`, lastError.message);
-        await sleep(RETRY_DELAY * attempt);
-      }
-    }
+export class ApiError extends Error {
+  constructor(public readonly code: string, message: string, public readonly status: number) {
+    super(message);
+    this.name = 'ApiError';
   }
-
-  throw lastError || new Error('Failed to process edit request after retries');
 }
 
-export async function checkHealth(): Promise<boolean> {
+const FRIENDLY_ERROR_MESSAGES: Record<string, string> = {
+  ai_unavailable: 'Asisten AI belum siap. Coba muat ulang halaman beberapa saat lagi.',
+  ai_processing_failed: 'Asisten AI sedang sibuk. Silakan coba lagi dalam beberapa saat.',
+  ai_invalid_response: 'Asisten AI belum dapat menyusun perubahan yang aman. Coba tuliskan target perubahan dengan lebih spesifik.',
+  invalid_ai_plan: 'AIDOCU tidak menerapkan rencana yang belum aman. Coba sebutkan teks atau elemen yang ingin diubah.',
+  document_not_found: 'Sesi dokumen sudah tidak tersedia. Unggah dokumen lagi untuk melanjutkan.',
+  unsupported_file: 'Pilih file Word berformat DOCX yang valid.',
+  invalid_docx: 'Dokumen tidak dapat dibaca. Pastikan file DOCX tidak rusak dan coba lagi.',
+  file_too_large: 'Ukuran dokumen melebihi batas unggahan. Gunakan file yang lebih kecil.',
+};
+
+function compactPlannerPayload(payload: AIEditRequest): AIEditRequest {
+  const allowedMeta = new Set(['level', 'rows', 'cols', 'style', 'location', 'imagePath', 'widthCm', 'heightCm', 'cells']);
+
+  return {
+    ...payload,
+    segments: payload.segments.map((segment) => ({
+
+      id: segment.id,
+      type: segment.type,
+      text: segment.text.slice(0, 8_000),
+      position: segment.position,
+      meta: Object.fromEntries(Object.entries(segment.meta ?? {}).filter(([key]) => allowedMeta.has(key))),
+    })),
+  };
+}
+
+async function request<T>(path: string, init: RequestInit = {}, signal?: AbortSignal): Promise<T> {
+  const timeout = new AbortController();
+  const timer = window.setTimeout(() => timeout.abort(), REQUEST_TIMEOUT_MS);
+  const cancelFromCaller = () => timeout.abort();
+  signal?.addEventListener('abort', cancelFromCaller, { once: true });
+  let response: Response;
   try {
-    const res = await fetch(`${API_BASE}/api/health`, { method: 'GET' });
-    return res.ok;
-  } catch {
-    return false;
+    response = await fetch(`${API_BASE_URL}${path}`, { ...init, signal: timeout.signal });
+  } catch (cause) {
+    if (timeout.signal.aborted) {
+      if (signal?.aborted) throw new DOMException('Request aborted', 'AbortError');
+      throw new ApiError('request_timeout', 'Asisten membutuhkan waktu terlalu lama. Silakan coba lagi.', 408);
+    }
+    if (cause instanceof DOMException && cause.name === 'AbortError') throw cause;
+    throw new ApiError('network_error', 'Tidak dapat terhubung ke AIDOCU API. Pastikan backend berjalan.', 0);
+  } finally {
+    window.clearTimeout(timer);
+    signal?.removeEventListener('abort', cancelFromCaller);
   }
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    const detail = body?.detail;
+    const code = detail?.code || 'request_failed';
+    throw new ApiError(code, FRIENDLY_ERROR_MESSAGES[code] || detail?.message || 'Permintaan belum dapat diselesaikan. Silakan coba lagi.', response.status);
+  }
+  return response.json() as Promise<T>;
+}
+
+export interface UploadedDocument {
+  document_id: string;
+  file_name: string;
+  version: number;
+  segments: DocSegment[];
+  image_count: number;
+}
+
+export function uploadDocument(file: File, signal?: AbortSignal) {
+  const formData = new FormData();
+  formData.set('file', file);
+  return request<UploadedDocument>('/api/documents/upload', { method: 'POST', body: formData }, signal);
+}
+
+export function planDocumentEdit(documentId: string, payload: AIEditRequest, signal?: AbortSignal) {
+  return request<AIEditResponse>(`/api/documents/${encodeURIComponent(documentId)}/edit`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(compactPlannerPayload(payload)),
+  }, signal);
 }

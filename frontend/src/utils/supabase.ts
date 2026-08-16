@@ -9,6 +9,17 @@ export const supabase = supabaseUrl && supabaseAnonKey
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null;
 
+function isDefaultAvatar(url: string): boolean {
+  if (!url) return true;
+  const lower = url.toLowerCase();
+  if (/avatar_redirect|identicon|monsterid|wavatar|retro|robohash|blank|default|no_avatar|noavatar|silhouette|placeholder|anonymous|user_placeholder|profile_placeholder|default_avatar|avatar_default|avatar\/default|avatar\.png|avatar\.jpg|avatar\.jpeg|avatar\.svg|default\.png|default\.jpg|default\.jpeg|default\.svg|\.png\?|\.jpg\?|\.jpeg\?|\.svg\?/.test(lower)) return true;
+  if (/^https?:\/\/[^/]+\/avatar\/\d+/.test(lower)) return true;
+  if (/^https?:\/\/[^/]+\/u\/\d+\?v=\d+$/.test(lower)) return true;
+  if (/^https?:\/\/[^/]+\/avatar\/[a-f0-9]{32}$/.test(lower)) return true;
+  return false;
+}
+
+
 export function authUserToProfile(user: {
   id: string;
   email?: string;
@@ -17,7 +28,10 @@ export function authUserToProfile(user: {
   const metadata = user.user_metadata || {};
   const email = user.email || 'user@example.com';
   const savedAvatar = typeof metadata.avatar_url === 'string' ? metadata.avatar_url : '';
-  const avatar = savedAvatar || getAbstractAvatar(avatarIndexForUser(user.id));
+  const avatar = isDefaultAvatar(savedAvatar)
+    ? getAbstractAvatar(avatarIndexForUser(user.id))
+    : savedAvatar || getAbstractAvatar(avatarIndexForUser(user.id));
+
   const birthDate = typeof metadata.birth_date === 'string' ? metadata.birth_date : '';
   const profileCompleted = metadata.profile_completed === true;
 

@@ -1,12 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { ArrowDown, ArrowUpRight, FileText, ShieldCheck, Upload } from 'lucide-react';
 
 interface UploadZoneProps {
   onFileSelect: (file: File) => void;
   isLoading: boolean;
   statusMessage?: string;
-  onRequestUpload: (file?: File) => void;
-  openPickerSignal?: number;
+  onRequestUpload: (file?: File, openPicker?: boolean) => boolean | void;
 }
 
 const capabilities = [
@@ -15,13 +14,8 @@ const capabilities = [
   { index: '03', icon: ArrowDown, label: 'Ready to deliver', copy: 'Export a clean, editable DOCX when you are done.' },
 ];
 
-export function UploadZone({ onFileSelect, isLoading, statusMessage, onRequestUpload, openPickerSignal = 0 }: UploadZoneProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
+export function UploadZone({ onFileSelect, isLoading, statusMessage, onRequestUpload }: UploadZoneProps) {
   const [isDragging, setIsDragging] = useState(false);
-
-  useEffect(() => {
-    if (openPickerSignal > 0) inputRef.current?.click();
-  }, [openPickerSignal]);
 
   const handleDrop = useCallback((event: React.DragEvent) => {
     event.preventDefault();
@@ -30,7 +24,9 @@ export function UploadZone({ onFileSelect, isLoading, statusMessage, onRequestUp
     if (file?.name.toLowerCase().endsWith('.docx')) onRequestUpload(file);
   }, [onRequestUpload]);
 
-  const selectFile = () => onRequestUpload();
+  const selectFile = () => {
+    onRequestUpload(undefined, true);
+  };
 
   return (
     <main className="landing-shell">
@@ -72,17 +68,6 @@ export function UploadZone({ onFileSelect, isLoading, statusMessage, onRequestUp
                 <small>{isLoading ? 'Building your editing space' : 'Drop a DOCX here or choose a file'}</small>
               </span>
               <ArrowUpRight className="upload-command__arrow" strokeWidth={1.7} />
-              <input
-                ref={inputRef}
-                type="file"
-                accept=".docx"
-                className="hidden"
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  if (file) onRequestUpload(file);
-                  event.target.value = '';
-                }}
-              />
             </button>
           </div>
           <p className="landing-caption pixel-label">DOCX ONLY &nbsp; / &nbsp; YOUR WORKSPACE</p>

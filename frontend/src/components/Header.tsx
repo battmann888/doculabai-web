@@ -9,12 +9,12 @@ interface HeaderProps {
   onReset: () => void;
   isReady: boolean;
   isDownloading: boolean;
-  onUploadFile?: (file: File) => void;
-  onRequestUpload?: (file?: File) => void;
-  uploadPickerSignal?: number;
+  onRequestUpload?: (file?: File, openPicker?: boolean) => boolean | void;
   onLogoClick?: () => void;
   user?: MockUser;
   onProfileClick?: () => void;
+  saveStatus?: 'idle' | 'saving' | 'saved' | 'error';
+  usageCount?: number;
 }
 
 export function Header({
@@ -23,20 +23,29 @@ export function Header({
   onReset,
   isReady,
   isDownloading,
-  onUploadFile,
   onRequestUpload,
-  uploadPickerSignal = 0,
   onLogoClick,
   user,
   onProfileClick,
+  saveStatus = 'idle',
+  usageCount = 0,
 }: HeaderProps) {
   const isWorkspace = Boolean(fileName);
-  const inputRef = useRef<HTMLInputElement>(null);
   const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
 
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    if (uploadPickerSignal > 0) inputRef.current?.click();
-  }, [uploadPickerSignal]);
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setExportDropdownOpen(false);
+      }
+    }
+    if (exportDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [exportDropdownOpen]);
 
   return (
     <header className={`app-header ${isWorkspace ? 'app-header--workspace' : 'app-header--landing'}`} role="banner">
@@ -51,6 +60,20 @@ export function Header({
             <span className="app-header__filename" title={fileName ?? undefined}>
               {fileName}
             </span>
+            {saveStatus !== 'idle' && (
+              <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
+                saveStatus === 'saving' ? 'bg-primary-500/20 text-primary-300 animate-pulse' :
+                saveStatus === 'saved' ? 'bg-emerald-500/20 text-emerald-300' :
+                'bg-red-500/20 text-red-300'
+              }`}>
+                {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved' : "Couldn't save"}
+              </span>
+            )}
+            {user && (
+              <span className="text-[11px] font-mono text-white/50 bg-white/5 px-2 py-0.5 rounded">
+                {usageCount}/5 AI edits
+              </span>
+            )}
             {user && (
               <button type="button" className="header-profile-chip" onClick={onProfileClick} title="Open profile">
                 <img src={user.avatar} alt="" />
@@ -59,7 +82,7 @@ export function Header({
             )}
             {isReady && (
               <>
-                <button type="button" className="header-upload-button" title="Upload new document" onClick={() => onRequestUpload?.()}>
+                <button type="button" className="header-upload-button" title="Upload new document" onClick={() => onRequestUpload?.(undefined, true)}>
                   <FilePlus2 className="h-4 w-4" strokeWidth={1.8} />
                   <span>New file</span>
                 </button>
@@ -72,7 +95,7 @@ export function Header({
                 >
                   <RotateCcw className="h-4 w-4" strokeWidth={1.8} />
                 </button>
-                <div className="relative">
+                <div className="relative" ref={dropdownRef}>
                   <button
                     type="button"
                     onClick={() => setExportDropdownOpen(!exportDropdownOpen)}
@@ -106,7 +129,6 @@ export function Header({
               </>
             )}
           </div>
-          <input ref={inputRef} type="file" accept=".docx" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) onRequestUpload?.(file); event.target.value = ''; }} />
           </>
         )}
       </div>
