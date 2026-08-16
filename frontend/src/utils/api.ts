@@ -1,6 +1,16 @@
 import type { AIEditRequest, AIEditResponse, DocSegment } from '@/types';
 
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, '') || 'http://localhost:8000';
+// Resolve the backend API base URL.
+// Priority:
+//   1. VITE_API_BASE_URL env var (set in .env / Vercel dashboard) if provided.
+//   2. In development, fall back to the local backend at http://localhost:8000.
+//   3. In production, fall back to a relative path (/api) so requests hit the
+//      same domain as the frontend (e.g. https://doculabai.my.id/api), avoiding
+//      CORS errors caused by hardcoded localhost URLs.
+const configuredBaseUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, '');
+const API_BASE_URL = configuredBaseUrl
+  || (import.meta.env.DEV ? 'http://localhost:8000' : '/api');
+
 const REQUEST_TIMEOUT_MS = 100_000;
 
 export class ApiError extends Error {
