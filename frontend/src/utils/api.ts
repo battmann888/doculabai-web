@@ -2,7 +2,8 @@ import type { AIEditRequest, AIEditResponse, DocSegment } from '@/types';
 
 const configuredBaseUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, '');
 const API_BASE_URL = configuredBaseUrl
-  || (import.meta.env.DEV ? 'http://localhost:8000' : '/api');
+  || (import.meta.env.DEV ? 'http://localhost:8000' : '');
+
 
 
 
