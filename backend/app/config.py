@@ -1,7 +1,20 @@
+import os
 from functools import lru_cache
 from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def _default_storage_dir() -> Path:
+    if os.environ.get("VERCEL"):
+        return Path("/tmp/data")
+    try:
+        probe = Path("./.write_probe")
+        probe.write_text("ok", encoding="utf-8")
+        probe.unlink()
+        return Path("./data")
+    except OSError:
+        return Path("/tmp/data")
 
 
 class Settings(BaseSettings):
@@ -17,9 +30,8 @@ class Settings(BaseSettings):
         "gemini-3.5-flash,gemini-3.5-flash-lite,gemini-3.6-flash,gemini-3.7-flash,gemini-flash-lite-latest"
     )
 
-    storage_dir: Path = Path(
-        "/tmp/data" if __import__("os").environ.get("VERCEL") else "./data"
-    )
+    storage_dir: Path = _default_storage_dir()
+
     max_upload_size_mb: int = 25
     ai_timeout_seconds: int = 90
     cors_origins: str = (
