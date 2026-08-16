@@ -1,4 +1,4 @@
-from pathlib import Path
+from io import BytesIO
 
 from docx import Document
 from docx.enum.section import WD_ORIENT
@@ -20,9 +20,9 @@ ALIGNMENT_MAP = {
 
 class DocumentEditor:
     def apply(
-        self, path: Path, edits: list[TextEdit], operations: list[Operation]
-    ) -> None:
-        document = Document(path)
+        self, content: bytes, edits: list[TextEdit], operations: list[Operation]
+    ) -> bytes:
+        document = Document(BytesIO(content))
         paragraphs = document.paragraphs
 
         for edit in edits:
@@ -31,7 +31,9 @@ class DocumentEditor:
         for operation in operations:
             self._apply_operation(document, paragraphs, operation)
 
-        document.save(path)
+        buffer = BytesIO()
+        document.save(buffer)
+        return buffer.getvalue()
 
     def _apply_text_edit(
         self, paragraphs: list, document: Document, edit: TextEdit

@@ -16,7 +16,8 @@ import { TemplateModal } from '@/components/TemplateModal';
 import { DocumentViewer } from '@/components/DocumentViewer';
 import { ChatPanel } from '@/components/ChatPanel';
 import { logger } from '@/utils/logger';
-import { planDocumentEdit, uploadDocument } from '@/utils/api';
+import { planDocumentEdit } from '@/utils/api';
+
 import {
   addImageToDocx,
   applyEditsToDocx,
@@ -212,8 +213,8 @@ export default function App() {
   const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
   const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
   const [currentBlob, setCurrentBlob] = useState<Blob | null>(null);
-  const [backendDocumentId, setBackendDocumentId] = useState<string | null>(null);
   const [usageCount, setUsageCount] = useState(0);
+
   const [authNotice, setAuthNotice] = useState<AuthNotice | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [theme, setTheme] = useState<AppTheme>(() => (localStorage.getItem('doculabai.theme') as AppTheme) || 'dark');
@@ -437,8 +438,8 @@ export default function App() {
     fileRef.current = file;
     setFileName(file.name);
     setDocumentFont('');
-    setBackendDocumentId(null);
     setSelectedImage(null);
+
     selectedImageSegmentRef.current = null;
     setSelectedImageSize('');
     setSelectedText('');
@@ -476,11 +477,9 @@ export default function App() {
         fileType: file.type,
       });
 
-      setStatus({ stage: 'uploading', message: 'Menyimpan dokumen dengan aman…' });
-      const uploaded = await uploadDocument(file);
-      setBackendDocumentId(uploaded.document_id);
       setStatus({ stage: 'parsing', message: 'Membaca struktur dokumen…' });
       const documentModel = await openEditableDocx(file, fileBuffer);
+
       documentRef.current = documentModel;
       const { segments: segs, fontFamily: sourceFont, images } = documentModel;
       segmentsRef.current = segs;
@@ -693,8 +692,7 @@ export default function App() {
 
         const operationId = `op_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
-        if (!backendDocumentId) throw new Error('Sesi dokumen belum siap. Unggah ulang dokumen lalu coba lagi.');
-        const response = await planDocumentEdit(backendDocumentId, {
+        const response = await planDocumentEdit({
           documentText,
           segments: currentSegments,
           userPrompt: prompt,
@@ -703,6 +701,7 @@ export default function App() {
           fontFamily: fontFamily || undefined,
           operationId,
         }, abortControllerRef.current.signal);
+
 
         const proposalId = `msg_${Date.now()}_a`;
         const hasProposal = response.success && (
@@ -751,7 +750,8 @@ export default function App() {
       }
     },
 
-    [backendDocumentId, messages, selectedText, selectedImage, isAuthenticated, user.id, scheduleAutosave, info],
+    [messages, selectedText, selectedImage, isAuthenticated, user.id, scheduleAutosave, info],
+
   );
 
   const handleApproveProposal = useCallback(async (messageId: string) => {

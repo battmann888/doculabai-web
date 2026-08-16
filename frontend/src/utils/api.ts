@@ -86,8 +86,27 @@ export function uploadDocument(file: File, signal?: AbortSignal) {
   return request<UploadedDocument>('/api/documents/upload', { method: 'POST', body: formData }, signal);
 }
 
-export function planDocumentEdit(documentId: string, payload: AIEditRequest, signal?: AbortSignal) {
-  return request<AIEditResponse>(`/api/documents/${encodeURIComponent(documentId)}/edit`, {
+export function planDocumentEdit(payload: AIEditRequest, signal?: AbortSignal) {
+  return request<AIEditResponse>('/api/documents/plan', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(compactPlannerPayload(payload)),
   }, signal);
 }
+
+export interface ChatRequestPayload {
+  question: string;
+  segments: DocSegment[];
+  fileName: string;
+  conversationHistory?: Array<Record<string, unknown>>;
+}
+
+export interface ChatResponsePayload {
+  answer: string;
+  recommendations?: Array<Record<string, unknown>>;
+}
+
+export function chatAboutDocument(payload: ChatRequestPayload, signal?: AbortSignal) {
+  return request<ChatResponsePayload>('/api/documents/chat', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+  }, signal);
+}
+
