@@ -183,13 +183,33 @@ function segmentsForPart(part: string, source: XmlDocument, position: number): D
   return segments;
 }
 
-export async function openEditableDocx(file: File | Blob): Promise<EditableDocx> {
+export async function openEditableDocx(file: File | Blob, preloadedBuffer?: ArrayBuffer): Promise<EditableDocx> {
   const zip = new JSZip();
-  const arrayBuffer = await file.arrayBuffer();
+  let arrayBuffer = preloadedBuffer;
+  if (!arrayBuffer) {
+    try {
+      arrayBuffer = await file.arrayBuffer();
+    } catch (err) {
+      console.error('[openEditableDocx] Failed to read file.arrayBuffer():', err);
+      throw new Error(`Failed to read file bytes: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
   if (!arrayBuffer || arrayBuffer.byteLength === 0) {
+    console.error('[openEditableDocx] File buffer is empty or zero-length.', {
+      fileName: file instanceof File ? file.name : 'blob',
+      fileSize: file.size,
+      fileType: file.type,
+    });
     throw new Error('File is empty or corrupted');
   }
+  console.log('[openEditableDocx] Reading DOCX buffer:', {
+    fileName: file instanceof File ? file.name : 'blob',
+    byteLength: arrayBuffer.byteLength,
+    fileSize: file.size,
+    fileType: file.type,
+  });
   const loaded = await zip.loadAsync(arrayBuffer);
+
   const segments: DocSegment[] = [];
   const images: Record<string, string> = {};
   const parts = Object.keys(loaded.files).filter((part) => textPartPattern.test(part));
@@ -1297,18 +1317,37 @@ export async function dispatchOperation(
   }
 }
 
-export async function renderDocx(fileOrBlob: Blob, container: HTMLElement): Promise<void> {
+export async function renderDocx(fileOrBlob: Blob, container: HTMLElement, preloadedBuffer?: ArrayBuffer): Promise<void> {
   try {
-    const arrayBuffer = await fileOrBlob.arrayBuffer();
+    let arrayBuffer = preloadedBuffer;
+    if (!arrayBuffer) {
+      try {
+        arrayBuffer = await fileOrBlob.arrayBuffer();
+      } catch (err) {
+        console.error('[renderDocx] Failed to read file.arrayBuffer():', err);
+        throw new Error(`Failed to read file bytes for rendering: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
     if (!arrayBuffer || arrayBuffer.byteLength === 0) {
+      console.error('[renderDocx] File buffer is empty or zero-length.', {
+        fileName: fileOrBlob instanceof File ? fileOrBlob.name : 'blob',
+        fileSize: fileOrBlob.size,
+        fileType: fileOrBlob.type,
+      });
       throw new Error('File is empty or corrupted');
     }
+    console.log('[renderDocx] Rendering DOCX buffer:', {
+      fileName: fileOrBlob instanceof File ? fileOrBlob.name : 'blob',
+      byteLength: arrayBuffer.byteLength,
+      fileSize: fileOrBlob.size,
+    });
     await renderAsync(arrayBuffer, container, undefined, {
       className: 'docx', inWrapper: true, ignoreWidth: false, ignoreHeight: false,
       ignoreFonts: false, breakPages: true, experimental: false, useBase64URL: true,
     });
   } catch (err) {
-    console.error('renderDocx error:', err);
+    console.error('[renderDocx] Render error:', err);
     throw new Error(`Failed to render document: ${err instanceof Error ? err.message : 'Unknown error'}`);
   }
 }
+

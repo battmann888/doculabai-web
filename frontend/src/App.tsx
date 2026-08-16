@@ -452,11 +452,40 @@ export default function App() {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     try {
+      // Read the file bytes ONCE up front. This avoids re-reading the File object
+      // multiple times, which can be interrupted by the browser's "Allow access to
+      // device/files" permission popup. Reusing a single ArrayBuffer for upload,
+      // parsing, and rendering prevents the file from being read as empty/corrupted
+      // when the permission dialog pauses the async flow.
+      let fileBuffer: ArrayBuffer;
+      try {
+        fileBuffer = await file.arrayBuffer();
+      } catch (readErr) {
+        console.error('[handleFileSelect] Failed to read file.arrayBuffer() on first attempt:', readErr);
+        // Retry once after a short delay to give the browser permission popup time to settle.
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        fileBuffer = await file.arrayBuffer();
+      }
+      if (!fileBuffer || fileBuffer.byteLength === 0) {
+        console.error('[handleFileSelect] File buffer is empty or zero-length after reading.', {
+          fileName: file.name,
+          fileSize: file.size,
+          fileType: file.type,
+        });
+        throw new Error('File is empty or corrupted');
+      }
+      console.log('[handleFileSelect] Successfully read file buffer:', {
+        fileName: file.name,
+        byteLength: fileBuffer.byteLength,
+        fileSize: file.size,
+        fileType: file.type,
+      });
+
       setStatus({ stage: 'uploading', message: 'Menyimpan dokumen dengan aman…' });
       const uploaded = await uploadDocument(file);
       setBackendDocumentId(uploaded.document_id);
       setStatus({ stage: 'parsing', message: 'Membaca struktur dokumen…' });
-      const documentModel = await openEditableDocx(file);
+      const documentModel = await openEditableDocx(file, fileBuffer);
       documentRef.current = documentModel;
       const { segments: segs, fontFamily: sourceFont, images } = documentModel;
       segmentsRef.current = segs;
@@ -471,7 +500,7 @@ export default function App() {
       if (container) {
         container.innerHTML = '';
         try {
-          await renderDocx(file, container);
+          await renderDocx(file, container, fileBuffer);
           if (!sourceFont) {
             setDocumentFont(detectDocumentFont(container));
           }
@@ -490,6 +519,7 @@ export default function App() {
       } else {
         throw new Error('Elemen canvas viewer tidak dapat dimuat.');
       }
+
 
       if (documentRef.current) {
         const exported = await exportEditableDocx(documentRef.current);
@@ -511,7 +541,16 @@ export default function App() {
         }
       }
     } catch (err) {
-      console.error('Parse error:', err);
+      // Detailed error logging so we can inspect the real cause in the browser console.
+      console.error('[handleFileSelect] Parse error:', err);
+      console.error('[handleFileSelect] Error details:', {
+        name: err instanceof Error ? err.name : typeof err,
+        message: err instanceof Error ? err.message : String(err),
+        stack: err instanceof Error ? err.stack : undefined,
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+      });
       logger.error('Document', 'Failed to parse document', err);
       setStatus({
         stage: 'error',
@@ -520,6 +559,7 @@ export default function App() {
       error('Gagal membaca dokumen. Pastikan file DOCX yang valid.');
     }
   }, [isAuthenticated, user.id, error]);
+
 
   const requestUpload = useCallback((file?: File, openPicker = true): boolean => {
     pendingFileRef.current = file || null;
