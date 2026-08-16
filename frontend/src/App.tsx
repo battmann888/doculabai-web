@@ -452,20 +452,15 @@ export default function App() {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     try {
-      // Read the file bytes ONCE up front. This avoids re-reading the File object
-      // multiple times, which can be interrupted by the browser's "Allow access to
-      // device/files" permission popup. Reusing a single ArrayBuffer for upload,
-      // parsing, and rendering prevents the file from being read as empty/corrupted
-      // when the permission dialog pauses the async flow.
       let fileBuffer: ArrayBuffer;
       try {
         fileBuffer = await file.arrayBuffer();
       } catch (readErr) {
         console.error('[handleFileSelect] Failed to read file.arrayBuffer() on first attempt:', readErr);
-        // Retry once after a short delay to give the browser permission popup time to settle.
         await new Promise((resolve) => setTimeout(resolve, 300));
         fileBuffer = await file.arrayBuffer();
       }
+
       if (!fileBuffer || fileBuffer.byteLength === 0) {
         console.error('[handleFileSelect] File buffer is empty or zero-length after reading.', {
           fileName: file.name,
@@ -541,8 +536,8 @@ export default function App() {
         }
       }
     } catch (err) {
-      // Detailed error logging so we can inspect the real cause in the browser console.
       console.error('[handleFileSelect] Parse error:', err);
+
       console.error('[handleFileSelect] Error details:', {
         name: err instanceof Error ? err.name : typeof err,
         message: err instanceof Error ? err.message : String(err),
