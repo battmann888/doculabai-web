@@ -108,8 +108,9 @@ export const DocumentViewer = forwardRef<HTMLDivElement, DocumentViewerProps>(
                 const text = block?.textContent?.trim();
                 if (text) onTextSelect?.(text);
               }}
-              className="docx-preview-wrapper document-paper w-full max-w-204 rounded-xl bg-white p-5 sm:p-12"
+              className={`docx-preview-wrapper document-paper w-full max-w-204 rounded-xl bg-white p-5 sm:p-12 ${viewMode === 'mobile' ? 'mobile-doc-wrapper' : ''}`}
               style={{ minHeight: '500px' }}
+
             />
             </div>
           </div>
