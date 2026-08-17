@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState, lazy, Suspense } from 'react';
+import { Sparkles, X } from 'lucide-react';
 import { Header } from '@/components/Header';
+
 import { UploadZone } from '@/components/UploadZone';
 import { LandingPage } from '@/components/LandingPage';
 
@@ -209,7 +211,9 @@ export default function App() {
   const [trashItems, setTrashItems] = useState<TrashItem[]>([]);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
+
   const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
   const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
   const [currentBlob, setCurrentBlob] = useState<Blob | null>(null);
@@ -1180,12 +1184,14 @@ export default function App() {
         if (isUpgradeOpen) setIsUpgradeOpen(false);
         if (isProfileOpen) setIsProfileOpen(false);
         if (isSidebarOpen) setIsSidebarOpen(false);
+        if (isChatOpen) setIsChatOpen(false);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isReady, editHistory, selectedImage, isLoginOpen, isUpgradeOpen, isProfileOpen, isSidebarOpen, handleDownload, handleRevert]);
+  }, [isReady, editHistory, selectedImage, isLoginOpen, isUpgradeOpen, isProfileOpen, isSidebarOpen, isChatOpen, handleDownload, handleRevert]);
+
 
   const overlays = (
     <>
@@ -1351,7 +1357,8 @@ export default function App() {
           </Suspense>
         </div>
 
-        <div className="w-[400px] shrink-0 max-lg:w-[340px]">
+        {/* Desktop: persistent AI Assistant sidebar */}
+        <div className="hidden w-[400px] shrink-0 max-lg:w-[340px] md:block">
           <Suspense fallback={<ChatSkeleton />}>
             <ChatPanel
               messages={messages}
@@ -1376,8 +1383,78 @@ export default function App() {
           </Suspense>
         </div>
       </div>
+
+      {/* Mobile: Floating Action Button for AI Assistant */}
+      <button
+        type="button"
+        onClick={() => setIsChatOpen(true)}
+        className="ai-fab md:hidden"
+        aria-label="Open AI Assistant"
+        title="AI Assistant"
+      >
+        <Sparkles className="h-6 w-6" strokeWidth={2} />
+        <span className="ai-fab__label">AI Assistant</span>
+      </button>
+
+      {/* Mobile: Slide-over drawer for AI Assistant */}
+      <div
+        className={`ai-drawer-backdrop md:hidden ${isChatOpen ? 'ai-drawer-backdrop--open' : ''}`}
+        onClick={() => setIsChatOpen(false)}
+        aria-hidden="true"
+      />
+      <div
+        className={`ai-drawer md:hidden ${isChatOpen ? 'ai-drawer--open' : ''}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label="AI Assistant"
+      >
+        <div className="ai-drawer__handle" />
+        <div className="ai-drawer__header">
+          <div className="flex items-center gap-2.5">
+            <div className="chat-icon flex h-8 w-8 items-center justify-center rounded-xl" aria-hidden="true">
+              <Sparkles className="h-4 w-4" strokeWidth={1.8} />
+            </div>
+            <div>
+              <p className="m-0 text-sm font-semibold text-white">AI Assistant</p>
+              <p className="pixel-label m-0 mt-0.5 text-[10px] tracking-[.11em] text-primary-100/55">DOCUMENT COPILOT</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsChatOpen(false)}
+            className="ai-drawer__close"
+            aria-label="Close AI Assistant"
+          >
+            <X className="h-5 w-5" strokeWidth={2} />
+          </button>
+        </div>
+        <div className="ai-drawer__body">
+          <Suspense fallback={<ChatSkeleton />}>
+            <ChatPanel
+              messages={messages}
+              onSend={handleSendPrompt}
+              isThinking={isThinking}
+              onRevert={handleRevert}
+              onApprove={handleApproveProposal}
+              onDiscard={handleDiscardProposal}
+              onAcceptRecommendation={handleAcceptRecommendation}
+              onDismissRecommendation={handleDismissRecommendation}
+              canChat={isAuthenticated}
+              onRequireLogin={() => { setIsLoginOpen(true); showAuthNotice({ type: 'error', message: 'Silakan login untuk mengirim pesan.' }); }}
+              canRevert={editHistory.length > 0}
+              documentFont={documentFont}
+              prefillPrompt={selectedText}
+              imageSegments={segmentsRef.current.filter((s) => s.type === 'image')}
+              imagesMap={imagesRef.current}
+              selectedImageSegment={selectedImageSegmentRef.current}
+              onStructuredEdit={handleStructuredEdit}
+            />
+          </Suspense>
+        </div>
+      </div>
       {overlays}
     </div>
     </ErrorBoundary>
   );
 }
+

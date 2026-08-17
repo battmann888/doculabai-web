@@ -782,4 +782,148 @@ body { overflow-x: hidden; }
   .landing-cta { padding: 40px 20px; }
 }
 
+/* ============================================================
+   AI FLOATING ACTION BUTTON (MOBILE)
+   ============================================================ */
+.ai-fab {
+  position: fixed;
+  right: 18px;
+  bottom: 20px;
+  z-index: 60;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 18px;
+  border: 1px solid rgba(153,178,255,.35);
+  border-radius: 999px;
+  background: linear-gradient(145deg, rgba(59,102,255,.95), rgba(40,80,223,.95));
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(59,102,255,.45), 0 2px 8px rgba(0,0,0,.3);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: transform .25s var(--ease-spring), box-shadow .25s var(--ease-smooth), background .25s var(--ease-smooth);
+}
+.ai-fab:hover {
+  transform: translateY(-2px) scale(1.03);
+  background: linear-gradient(145deg, rgba(79,117,255,.98), rgba(59,102,255,.98));
+  box-shadow: 0 14px 38px rgba(59,102,255,.6), 0 2px 8px rgba(0,0,0,.3);
+}
+.ai-fab:active { transform: translateY(0) scale(.97); }
+.ai-fab__label { letter-spacing: .01em; }
+
+[data-theme='light'] .ai-fab {
+  border-color: rgba(59,102,255,.4);
+  background: linear-gradient(145deg, #3b66ff, #2850df);
+  color: #fff;
+}
+
+/* ============================================================
+   AI DRAWER (MOBILE SLIDE-OVER)
+   ============================================================ */
+.ai-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: rgba(4,6,12,.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .3s var(--ease-smooth);
+}
+.ai-drawer-backdrop--open { opacity: 1; pointer-events: auto; }
+
+.ai-drawer {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  height: 88svh;
+  max-height: 88svh;
+  border-radius: 24px 24px 0 0;
+  background: linear-gradient(160deg, rgba(13,18,36,.98), rgba(6,8,14,.99));
+  border: 1px solid rgba(171,192,255,.16);
+  border-bottom: 0;
+  box-shadow: 0 -20px 60px rgba(0,0,0,.5);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  transform: translateY(100%);
+  transition: transform .38s var(--ease-spring);
+  will-change: transform;
+}
+.ai-drawer--open { transform: translateY(0); }
+
+.ai-drawer__handle {
+  width: 44px;
+  height: 5px;
+  margin: 10px auto 4px;
+  border-radius: 99px;
+  background: rgba(171,192,255,.28);
+  flex-shrink: 0;
+}
+
+.ai-drawer__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 18px 14px;
+  border-bottom: 1px solid rgba(171,192,255,.12);
+  flex-shrink: 0;
+}
+
+.ai-drawer__close {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 1px solid rgba(171,192,255,.18);
+  border-radius: 999px;
+  background: rgba(255,255,255,.05);
+  color: rgba(244,247,255,.75);
+  cursor: pointer;
+  transition: background .2s var(--ease-smooth), color .2s var(--ease-smooth), transform .2s var(--ease-smooth);
+}
+.ai-drawer__close:hover { background: rgba(255,255,255,.12); color: #fff; transform: rotate(90deg); }
+
+.ai-drawer__body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.ai-drawer__body .chat-panel {
+  height: 100%;
+  border-left: 0 !important;
+  border-radius: 0 0 24px 24px;
+}
+
+[data-theme='light'] .ai-drawer {
+  background: linear-gradient(160deg, #fbfcff, #eef2fb);
+  border-color: #d7deeb;
+}
+[data-theme='light'] .ai-drawer__handle { background: rgba(41,64,112,.25); }
+[data-theme='light'] .ai-drawer__close { border-color: #ccd5e6; background: #fff; color: #5a6680; }
+[data-theme='light'] .ai-drawer__close:hover { background: #f0f4ff; color: #17213d; }
+
+/* ============================================================
+   MOBILE HEADER POLISH
+   ============================================================ */
+@media (max-width: 640px) {
+  .app-header__inner { gap: 8px; }
+  .app-header__actions { gap: 6px; }
+  .header-profile-chip span { display: none; }
+  .header-profile-chip { padding: 4px; }
+  .header-download-button span { display: none; }
+  .header-download-button { padding: 10px; }
+  .header-upload-button { padding: 9px; }
+  .workspace-dashboard__stats span { white-space: nowrap; }
+}
+
+
 
