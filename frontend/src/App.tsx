@@ -1392,9 +1392,12 @@ export default function App() {
         aria-label="Open AI Assistant"
         title="AI Assistant"
       >
-        <Sparkles className="h-6 w-6" strokeWidth={2} />
+        <span className="ai-fab__icon" aria-hidden="true">
+          <Sparkles className="h-4 w-4" strokeWidth={2} />
+        </span>
         <span className="ai-fab__label">AI Assistant</span>
       </button>
+
 
       {/* Mobile: Slide-over drawer for AI Assistant */}
       <div

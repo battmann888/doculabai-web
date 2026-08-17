@@ -61,8 +61,8 @@ export const DocumentViewer = forwardRef<HTMLDivElement, DocumentViewerProps>(
             </div>
           )}
 
-          <div className="flex justify-center px-4 py-8 sm:px-8 sm:py-12">
-            <div className="image-canvas-stage">
+          <div className="flex justify-center px-3 py-6 sm:px-8 sm:py-12">
+            <div className="image-canvas-stage w-full max-w-204">
             <div
               ref={ref}
               onClick={(event) => {
@@ -78,11 +78,12 @@ export const DocumentViewer = forwardRef<HTMLDivElement, DocumentViewerProps>(
                 const text = block?.textContent?.trim();
                 if (text) onTextSelect?.(text);
               }}
-              className="docx-preview-wrapper document-paper w-full max-w-204 rounded-xl bg-white p-8 sm:p-12"
+              className="docx-preview-wrapper document-paper w-full max-w-204 rounded-xl bg-white p-5 sm:p-12"
               style={{ minHeight: '500px' }}
             />
             </div>
           </div>
+
         </div>
       </div>
     );
