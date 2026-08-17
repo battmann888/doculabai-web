@@ -170,27 +170,8 @@ body { overflow-x: hidden; }
    ============================================================ */
 @media (max-width: 760px) {
   .docx-preview-wrapper { max-width: 100%; overflow-x: hidden; }
-  .docx-preview-wrapper .docx-wrapper { width: 100% !important; max-width: 100% !important; }
-  .docx-preview-wrapper .docx-wrapper > section { width: 100% !important; max-width: 100% !important; }
-  .docx-preview-wrapper .docx-wrapper p,
-  .docx-preview-wrapper .docx-wrapper li,
-  .docx-preview-wrapper .docx-wrapper td,
-  .docx-preview-wrapper .docx-wrapper th,
-  .docx-preview-wrapper .docx-wrapper span,
-  .docx-preview-wrapper .docx-wrapper div {
-    max-width: 100% !important;
-    word-wrap: break-word !important;
-    overflow-wrap: break-word !important;
-  }
-  .docx-preview-wrapper .docx-wrapper img {
-    max-width: 100% !important;
-    height: auto !important;
-  }
-  .docx-preview-wrapper .docx-wrapper table {
-    max-width: 100% !important;
-    table-layout: fixed !important;
-  }
 }
+
 
 /* ============================================================
    VIEW MODE TOGGLE (Desktop / Mobile)
@@ -259,85 +240,29 @@ body { overflow-x: hidden; }
 
 .view-mode-mobile .docx-preview-wrapper {
   max-width: 100%;
-  overflow-x: hidden;
-}
-.view-mode-mobile .docx-preview-wrapper .docx-wrapper {
-  width: 100% !important;
-  max-width: 100% !important;
-}
-.view-mode-mobile .docx-preview-wrapper .docx-wrapper > section {
-  width: 100% !important;
-  max-width: 100% !important;
-}
-.view-mode-mobile .docx-preview-wrapper .docx-wrapper p,
-.view-mode-mobile .docx-preview-wrapper .docx-wrapper li,
-.view-mode-mobile .docx-preview-wrapper .docx-wrapper td,
-.view-mode-mobile .docx-preview-wrapper .docx-wrapper th,
-.view-mode-mobile .docx-preview-wrapper .docx-wrapper span,
-.view-mode-mobile .docx-preview-wrapper .docx-wrapper div {
-  max-width: 100% !important;
-  word-wrap: break-word !important;
-  overflow-wrap: break-word !important;
-}
-.view-mode-mobile .docx-preview-wrapper .docx-wrapper img {
-  max-width: 100% !important;
-  height: auto !important;
-}
-.view-mode-mobile .docx-preview-wrapper .docx-wrapper table {
-  max-width: 100% !important;
-  table-layout: fixed !important;
+  overflow: visible;
 }
 
+
 /* ============================================================
-   NUCLEAR CSS OVERRIDE (Mobile View only)
-   Forces ALL inline styles injected by the DOCX renderer
-   (mammoth/docx.js) to be overridden so text fits the screen.
-   Only active when .mobile-doc-wrapper is present.
+   MOBILE VIEW FULL SCALING (Zoom Out)
+   Renders the document at 100% desktop layout, then zooms
+   the ENTIRE canvas down as one unit so it fits the screen.
+   Layout (indentation, spacing, tables) stays identical.
+   Uses CSS `zoom` (Chrome/Edge/Safari) which automatically
+   adjusts the layout height — no empty space below.
    ============================================================ */
-.mobile-doc-wrapper * {
-  font-size: 16px !important;
-  line-height: 1.6 !important;
-  white-space: pre-wrap !important;
-  word-break: break-word !important;
-  overflow-wrap: break-word !important;
-  max-width: 100% !important;
-  font-family: inherit !important;
-}
-.mobile-doc-wrapper h1,
-.mobile-doc-wrapper h2,
-.mobile-doc-wrapper h3,
-.mobile-doc-wrapper h4,
-.mobile-doc-wrapper h5,
-.mobile-doc-wrapper h6 {
-  font-size: 20px !important;
-  line-height: 1.35 !important;
-  font-weight: 700 !important;
-}
-.mobile-doc-wrapper h1 { font-size: 24px !important; }
-.mobile-doc-wrapper h2 { font-size: 22px !important; }
-.mobile-doc-wrapper img {
-  max-width: 100% !important;
-  height: auto !important;
-}
-.mobile-doc-wrapper table {
-  max-width: 100% !important;
-  table-layout: fixed !important;
-}
-.mobile-doc-wrapper td,
-.mobile-doc-wrapper th {
-  font-size: 14px !important;
-  line-height: 1.5 !important;
-  word-break: break-word !important;
-  overflow-wrap: break-word !important;
+.mobile-doc-wrapper {
+  zoom: 0.5;
 }
 .mobile-doc-wrapper .docx-wrapper,
 .mobile-doc-wrapper .docx-wrapper > section,
 .mobile-doc-wrapper .docx-wrapper > div {
-  width: 100% !important;
-  max-width: 100% !important;
-  padding: 0 !important;
-  margin: 0 0 16px !important;
+  width: auto !important;
+  max-width: none !important;
 }
+
+
 
 
 
