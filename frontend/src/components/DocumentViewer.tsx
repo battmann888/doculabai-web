@@ -1,9 +1,13 @@
 import { forwardRef } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Monitor, Smartphone } from 'lucide-react';
+
+export type DocumentViewMode = 'desktop' | 'mobile';
 
 interface DocumentViewerProps {
   isRendering: boolean;
   statusMessage: string;
+  viewMode: DocumentViewMode;
+  onViewModeChange: (mode: DocumentViewMode) => void;
   onTextSelect?: (text: string) => void;
   onImageUpload?: (file: File) => void;
   onImageSelect?: (image: HTMLImageElement) => void;
@@ -13,11 +17,11 @@ interface DocumentViewerProps {
 }
 
 export const DocumentViewer = forwardRef<HTMLDivElement, DocumentViewerProps>(
-  ({ isRendering, statusMessage, onTextSelect, onImageUpload, onImageSelect, onImageDeselect, imageSelected, selectedImageSize }, ref) => {
+  ({ isRendering, statusMessage, viewMode, onViewModeChange, onTextSelect, onImageUpload, onImageSelect, onImageDeselect, imageSelected, selectedImageSize }, ref) => {
 
     return (
       <div className="document-shell flex h-full flex-col">
-        <div className="document-toolbar flex items-center justify-between px-5 py-3">
+        <div className="document-toolbar flex items-center justify-between gap-3 px-5 py-3">
           <div className="flex items-center gap-2.5">
             <div className="flex gap-1.5">
               <span className="h-2.5 w-2.5 rounded-full bg-white/18" />
@@ -46,11 +50,37 @@ export const DocumentViewer = forwardRef<HTMLDivElement, DocumentViewerProps>(
                 }}
               />
             </label>
-            <span className="pixel-label text-[10px] font-medium tracking-[.1em] text-primary-100/50">
+            <span className="pixel-label hidden text-[10px] font-medium tracking-[.1em] text-primary-100/50 lg:inline">
               LAYOUT LOCKED / AI EDITABLE
             </span>
           </div>
 
+        </div>
+
+        {/* View Mode Toggle */}
+        <div className="flex items-center justify-center border-b border-white/8 bg-[#0b0e16]/60 px-4 py-2 backdrop-blur-sm">
+          <div className="view-toggle" role="group" aria-label="Document view mode">
+            <button
+              type="button"
+              className={`view-toggle__option ${viewMode === 'desktop' ? 'view-toggle__option--active' : ''}`}
+              onClick={() => onViewModeChange('desktop')}
+              aria-pressed={viewMode === 'desktop'}
+              title="Desktop View - render dokumen dengan ukuran asli (A4)"
+            >
+              <Monitor className="h-3.5 w-3.5" strokeWidth={2} />
+              <span>Desktop View</span>
+            </button>
+            <button
+              type="button"
+              className={`view-toggle__option ${viewMode === 'mobile' ? 'view-toggle__option--active' : ''}`}
+              onClick={() => onViewModeChange('mobile')}
+              aria-pressed={viewMode === 'mobile'}
+              title="Mobile View - dokumen mengikuti lebar layar"
+            >
+              <Smartphone className="h-3.5 w-3.5" strokeWidth={2} />
+              <span>Mobile View</span>
+            </button>
+          </div>
         </div>
 
         <div className="relative flex-1 overflow-auto">
@@ -61,7 +91,7 @@ export const DocumentViewer = forwardRef<HTMLDivElement, DocumentViewerProps>(
             </div>
           )}
 
-          <div className="flex justify-center px-3 py-6 sm:px-8 sm:py-12">
+          <div className={`flex justify-center px-3 py-6 sm:px-8 sm:py-12 ${viewMode === 'mobile' ? 'view-mode-mobile' : 'view-mode-desktop'}`}>
             <div className="image-canvas-stage w-full max-w-204">
             <div
               ref={ref}
@@ -91,3 +121,4 @@ export const DocumentViewer = forwardRef<HTMLDivElement, DocumentViewerProps>(
 );
 
 DocumentViewer.displayName = 'DocumentViewer';
+

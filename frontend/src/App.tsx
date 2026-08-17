@@ -15,8 +15,9 @@ import { ToastContainer, useToast } from '@/components/Toast';
 import { ProgressBar } from '@/components/ProgressBar';
 import { VersionHistoryModal } from '@/components/VersionHistoryModal';
 import { TemplateModal } from '@/components/TemplateModal';
-import { DocumentViewer } from '@/components/DocumentViewer';
+import { DocumentViewer, type DocumentViewMode } from '@/components/DocumentViewer';
 import { ChatPanel } from '@/components/ChatPanel';
+
 import { logger } from '@/utils/logger';
 import { planDocumentEdit } from '@/utils/api';
 
@@ -218,6 +219,10 @@ export default function App() {
   const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
   const [currentBlob, setCurrentBlob] = useState<Blob | null>(null);
   const [usageCount, setUsageCount] = useState(0);
+  const [viewMode, setViewMode] = useState<DocumentViewMode>(() =>
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 760px)').matches ? 'mobile' : 'desktop',
+  );
+
 
   const [authNotice, setAuthNotice] = useState<AuthNotice | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -1346,6 +1351,8 @@ export default function App() {
               ref={viewerRef}
               isRendering={status.stage === 'rendering' || status.stage === 'parsing'}
               statusMessage={status.message || 'Memproses dokumen...'}
+              viewMode={viewMode}
+              onViewModeChange={setViewMode}
               onTextSelect={setSelectedText}
               onImageUpload={handleImageUpload}
               onImageSelect={handleImageSelect}
@@ -1353,6 +1360,7 @@ export default function App() {
               imageSelected={Boolean(selectedImage?.isConnected)}
               selectedImageSize={selectedImageSize}
             />
+
 
           </Suspense>
         </div>
