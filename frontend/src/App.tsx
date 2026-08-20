@@ -1365,38 +1365,13 @@ export default function App() {
           </Suspense>
         </div>
 
-        {/* Desktop: persistent AI Assistant sidebar */}
-        <div className="hidden w-[400px] shrink-0 max-lg:w-[340px] md:block">
-          <Suspense fallback={<ChatSkeleton />}>
-            <ChatPanel
-              messages={messages}
-              onSend={handleSendPrompt}
-              isThinking={isThinking}
-              onRevert={handleRevert}
-              onApprove={handleApproveProposal}
-              onDiscard={handleDiscardProposal}
-              onAcceptRecommendation={handleAcceptRecommendation}
-              onDismissRecommendation={handleDismissRecommendation}
-              canChat={isAuthenticated}
-              onRequireLogin={() => { setIsLoginOpen(true); showAuthNotice({ type: 'error', message: 'Silakan login untuk mengirim pesan.' }); }}
-              canRevert={editHistory.length > 0}
-              documentFont={documentFont}
-              prefillPrompt={selectedText}
-              imageSegments={segmentsRef.current.filter((s) => s.type === 'image')}
-              imagesMap={imagesRef.current}
-              selectedImageSegment={selectedImageSegmentRef.current}
-              onStructuredEdit={handleStructuredEdit}
-            />
-
-          </Suspense>
-        </div>
       </div>
 
-      {/* Mobile: Floating Action Button for AI Assistant */}
+      {/* Floating Action Button for AI Assistant (all screen sizes) */}
       <button
         type="button"
         onClick={() => setIsChatOpen(true)}
-        className="ai-fab md:hidden"
+        className="ai-fab"
         aria-label="Open AI Assistant"
         title="AI Assistant"
       >
@@ -1407,18 +1382,19 @@ export default function App() {
       </button>
 
 
-      {/* Mobile: Slide-over drawer for AI Assistant */}
+      {/* Slide-over drawer for AI Assistant (all screen sizes) */}
       <div
-        className={`ai-drawer-backdrop md:hidden ${isChatOpen ? 'ai-drawer-backdrop--open' : ''}`}
+        className={`ai-drawer-backdrop ${isChatOpen ? 'ai-drawer-backdrop--open' : ''}`}
         onClick={() => setIsChatOpen(false)}
         aria-hidden="true"
       />
       <div
-        className={`ai-drawer md:hidden ${isChatOpen ? 'ai-drawer--open' : ''}`}
+        className={`ai-drawer ${isChatOpen ? 'ai-drawer--open' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-label="AI Assistant"
       >
+
         <div className="ai-drawer__handle" />
         <div className="ai-drawer__header">
           <div className="flex items-center gap-2.5">
